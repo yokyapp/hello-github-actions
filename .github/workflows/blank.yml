@@ -34,35 +34,28 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Build step
+      run: |
+        echo "Building the application..."
+        
+    - name: update badge
+      run: |
+        if ! grep -q "!\[CI/CD Pipeline\]" README.md; then
+        
+          echo "![CI/CD Pipeline](https://github.com/${{ github.repository }}/actions/workflows/main.yml/badge.svg)" > temp_readme
+          cat README.md >> temp_readme
+          mv temp_readme README.md
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install requirements
-        run: pip install -r requirements.txt
-
-      - name: Get Workflow Status Badge
-        id: badge
-        uses: jossef/workflow-status-badge@v2
-        with:
-          workflow: ${{ github.workflow }}
-          branch: ${{ github.head_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update README with Badge
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          file_pattern: README.md
-          commit_message: "Add build status badge to README"
-          push_options: "origin ${{ github.head_ref }}"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref }}
-          create_new_branch: false
-          update_remote_origin: true
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Update README with build status badge"
+          git push
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
