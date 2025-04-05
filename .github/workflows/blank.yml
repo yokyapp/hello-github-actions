@@ -4,8 +4,29 @@ on:
   push:
     branches: [ "main" ]
 jobs:
-  say-hello:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: print greeting
-        run: echo "hello, github actions"
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: set up sython
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: install requiremets
+        run: pip install -r requirements.txt
+
+      - name: Tests
+        run: |
+          coverage run -m pytest tests/
+          coverage report -m --fail-under=70
+          coverage xml -o coverage.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml  
+  
