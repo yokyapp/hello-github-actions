@@ -47,19 +47,29 @@ jobs:
       run: |
         echo "Building the application..."
         
-    - name: update badge
+    - name: Check for badge
+      id: check_badge
       run: |
         if ! grep -q "!\[CI/CD Pipeline\]" README.md; then
-        
-          echo "![CI/CD Pipeline](https://github.com/${{ github.repository }}/actions/workflows/main.yml/badge.svg)" > temp_readme
-          cat README.md >> temp_readme
-          mv temp_readme README.md
-
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add README.md
-          git commit -m "Update README with build status badge"
-          git push
+          echo "update_badge=true" >> $GITHUB_OUTPUT
+        else
+          echo "update_badge=false" >> $GITHUB_OUTPUT
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Update README
+      if: steps.check_badge.outputs.update_badge == 'true'
+      run: |
+        echo "![CI/CD Pipeline](https://github.com/${{ github.repository }}/actions/workflows/test-and-build.yml/badge.svg)" > temp_readme
+        cat README.md >> temp_readme
+        mv temp_readme README.md
+        
+    - name: Create PR for README update
+      if: steps.check_badge.outputs.update_badge == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: Add build status badge to README
+        title: Update README with build status badge
+        body: Automatically adding build status badge to README
+        branch: update-readme-badge
+        base: ${{ github.head_ref || github.ref_name }}
