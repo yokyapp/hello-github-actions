@@ -28,5 +28,43 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage.xml  
+          path: coverage.xml 
+
+
+
+build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: сheckout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }} 
+
+      - name: set up sython
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: install requirements
+        run: pip install -r requirements.txt
+
+      - name: Get Workflow Status Badge
+        id: badge
+        uses: jossef/workflow-status-badge@v2
+        with:
+          workflow: ${{ github.workflow }}
+          branch: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update README with Badge
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          file_pattern: README.md
+          commit_message: "Add build status badge to README"
+          push_options: "origin ${{ github.head_ref }}"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}
+          create_new_branch: false
+          update_remote_origin: true           
   
