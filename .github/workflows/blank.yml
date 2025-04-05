@@ -35,41 +35,34 @@ jobs:
           name: coverage-report
           path: coverage.xml
 
+
   build:
     needs: test
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      
-    - name: Build step
-      run: |
-        echo "Building the application..."
-        
-    - name: Check for badge
-      id: check_badge
-      run: |
-        if ! grep -q "!\[CI/CD Pipeline\]" README.md; then
-          echo "update_badge=true" >> $GITHUB_OUTPUT
-        else
-          echo "update_badge=false" >> $GITHUB_OUTPUT
-        fi
-        
-    - name: Update README
-      if: steps.check_badge.outputs.update_badge == 'true'
-      run: |
-        echo "![CI/CD Pipeline](https://github.com/${{ github.repository }}/actions/workflows/test-and-build.yml/badge.svg)" > temp_readme
-        cat README.md >> temp_readme
-        mv temp_readme README.md
-        
-    - name: Create PR for README update
-      if: steps.check_badge.outputs.update_badge == 'true'
-      uses: peter-evans/create-pull-request@v5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: Add build status badge to README
-        title: Update README with build status badge
-        body: Automatically adding build status badge to README
-        branch: update-readme-badge
-        base: ${{ github.head_ref || github.ref_name }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Build step
+        run: echo "Build successful!"
+
+      - name: Update README with build badge
+        run: |
+          if [ -f README.md ] && ! grep -q "workflow-badge" README.md; then
+            echo "![workflow-badge](https://github.com/${{ github.repository }}/actions/workflows/ci.yml/badge.svg)" > temp_readme.md
+            echo "" >> temp_readme.md
+            cat README.md >> temp_readme.md
+            mv temp_readme.md README.md
+
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add README.md
+            git commit -m "Add workflow badge to README [skip ci]"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
