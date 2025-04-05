@@ -1,24 +1,25 @@
-name: basic workflow
+name: Test and Build
 
 on:
   pull_request:
     branches: [ "develop" ]
+
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: set up sython
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: install requiremets
+      - name: Install requirements
         run: pip install -r requirements.txt
 
-      - name: Tests
+      - name: Run Tests with pytest and coverage
         run: |
           coverage run -m pytest tests/
           coverage report -m --fail-under=70
@@ -28,25 +29,23 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage.xml 
+          path: coverage.xml
 
-
-
-build:
+  build:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: сheckout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }} 
+          ref: ${{ github.head_ref }}
 
-      - name: set up sython
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: install requirements
+      - name: Install requirements
         run: pip install -r requirements.txt
 
       - name: Get Workflow Status Badge
@@ -66,5 +65,4 @@ build:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
           create_new_branch: false
-          update_remote_origin: true           
-  
+          update_remote_origin: true
